@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>AI Medicine Recommender</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>AI Medicine Recommender</h1>
+        <form id="symptomForm">
+            <label>Enter your symptoms (comma separated):</label>
+            <textarea name="symptoms" rows="3" placeholder="e.g. fever, headache, sneezing..." required></textarea>
+            <button type="submit">Find Medicine</button>
+        </form>
+        <div id="results"></div>
+    </div>
+
+    <script>
+        document.getElementById('symptomForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData();
+            const symptomsInput = document.querySelector('textarea[name="symptoms"]').value;
+            const symptomsArray = symptomsInput.split(',').map(s => s.trim()).filter(Boolean);
+            symptomsArray.forEach(s => formData.append("symptoms", s));
+
+            const response = await fetch('/recommend', {
+                method: 'POST',
+                body: formData
+            });
+
+            const resultDiv = document.getElementById('results');
+            resultDiv.innerHTML = '';
+            if (!response.ok) {
+                resultDiv.innerHTML = "<p>No medicine found.</p>";
+                return;
+            }
+
+            const data = await response.json();
+            data.forEach(med => {
+                resultDiv.innerHTML += `
+                    <div class="medicine-card">
+                        <img src="https://via.placeholder.com/100?text=${med.medicine}" alt="${med.medicine}" />
+                        <h3>${med.medicine}</h3>
+                        <p>Score: ${med.score}</p>
+                        <p>Price: ${med.price}</p>
+                        <p>Store: ${med.store}</p>
+                        <a href="${med.link}" target="_blank">Buy Now</a>
+                        <div class="actions">
+                            <button onclick="alert('Confirmed: ${med.medicine}')">✔ Confirm</button>
+                            <button onclick="alert('Skipped: ${med.medicine}')">✖ Skip</button>
+                        </div>
+                    </div>
+                `;
+            });
+        });
+    </script>
+</body>
+</html>
